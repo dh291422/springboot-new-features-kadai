@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">    
+    <head>
+        <div th:replace="~{fragment :: meta}"></div>   
+        <div th:replace="~{fragment :: styles}"></div>
+        <title>レビュー一覧</title>   
+    </head>
+    <body>
+        <div class="samuraitravel-wrapper">
+            <!-- ヘッダー -->
+            <div th:replace="~{fragment :: header}"></div>
+            
+            <main>
+                <div class="container pt-4 pb-5 samuraitravel-container">
+                    <div class="row justify-content-center">
+                        <div class="col-xxl-9 col-xl-10 col-lg-11">
+                            <nav class="mb-4" style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                                <ol class="breadcrumb mb-0">                        
+                                    <li class="breadcrumb-item"><a th:href="@{/}">ホーム</a></li>
+                                    <li class="breadcrumb-item"><a th:href="@{/houses}">民宿一覧</a></li>
+                                    <li class="breadcrumb-item"><a th:href="@{/houses/__${house.getId()}__}">民宿詳細</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">レビュー一覧</li>
+                                </ol>
+                            </nav>
+                            
+                            <!-- h1タグへth:textでhouse.getName() + 'のレビュー一覧'を設定 -->
+                            <h1 class="mb-4 text-center" th:text="${house.name} + 'のレビュー一覧'"></h1> 
+                            
+                            <div class="row row-cols-1 row-cols-md-2 g-4 mb-4">
+                                <!-- divタグへth:eachでreviewPageをreviewで使用出来るように設定 -->
+                                <div class="col" th:each="review : ${reviewPage}">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between">
+                                                <!-- h5タグへth:textでreview.getUser()のgetName()を設定 -->
+                                                <h5 class="card-title" th:text="${review.user.name}"></h5>
+                                                <!-- spanタグへsec:authorize(ログイン済み)を追加、さらにth:ifで#authentication.principal.user.id=reviewのユーザー情報にあるidを設定 -->
+                                                <span sec:authorize="isAuthenticated()" th:if="${#authentication.principal.user.id} == ${review.user.id}">
+                                                    <!-- aタグへth:hrefで/houses/(houseのgetId())/reviews/(reviewのgetId())/editを設定 -->
+                                                    <a th:href="@{'/houses/' + ${house.id} + '/reviews/' + ${review.id} + '/edit'}">編集</a>
+                                                    <!-- aタグへth:data-bs-targetで'#deleteReviewModal' + reviewのgetId()を設定 -->
+                                                    <a href="#" class="samuraitravel-link-danger" data-bs-toggle="modal" th:attr="data-bs-target='#deleteReviewModal' + ${review.id}">削除</a>
+
+                                                    <!-- 削除用モーダル -->
+                                                    <div class="modal fade" th:id="'deleteReviewModal' + ${review.id}" tabindex="-1" aria-hidden="true">
+                                                        <div class="modal-dialog modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">レビュー削除</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <p>レビューを削除してもよろしいですか？</p>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <form th:action="@{'/houses/' + ${house.id} + '/reviews/' + ${review.id} + '/delete'}" method="post">
+                                                                        <button type="submit" class="btn btn-danger">削除</button>
+                                                                    </form>
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </span>      
+                                            </div>                                              
+                                            <p class="card-text mb-1">
+                                                <!-- spanタグでscoreに応じて★の数を表示 -->
+                                                <span th:if="${review.score == 1}">★☆☆☆☆</span>
+                                                <span th:if="${review.score == 2}">★★☆☆☆</span>
+                                                <span th:if="${review.score == 3}">★★★☆☆</span>
+                                                <span th:if="${review.score == 4}">★★★★☆</span>
+                                                <span th:if="${review.score == 5}">★★★★★</span>
+                                            </p>                      
+                                            <!-- pタグへth:textでreviewのgetContent()を設定 -->
+                                            <p class="card-text" th:text="${review.content}"></p>
+                                        </div>
+                                    </div>
+                                </div>                                     
+                            </div>    
+                            
+                            <!-- ページネーション -->
+                            <nav th:if="${reviewPage.totalPages > 1}">
+                                <ul class="pagination justify-content-center">
+                                    <li class="page-item" th:classappend="${reviewPage.first} ? 'disabled'">
+                                        <a class="page-link" th:href="@{|/houses/${house.id}/reviews?page=${reviewPage.number - 1}|}">前</a>
+                                    </li>
+                                    <li class="page-item" th:each="i : ${#numbers.sequence(0, reviewPage.totalPages - 1)}" th:classappend="${i == reviewPage.number} ? 'active'">
+                                        <a class="page-link" th:href="@{|/houses/${house.id}/reviews?page=${i}|}" th:text="${i + 1}">1</a>
+                                    </li>
+                                    <li class="page-item" th:classappend="${reviewPage.last} ? 'disabled'">
+                                        <a class="page-link" th:href="@{|/houses/${house.id}/reviews?page=${reviewPage.number + 1}|}">次</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>                            
+            </main>
+            
+            <!-- フッター -->
+            <div th:replace="~{fragment :: footer}"></div>
+        </div>    
+        
+        <div th:replace="~{fragment :: scripts}"></div>  
+    </body>
+</html>
