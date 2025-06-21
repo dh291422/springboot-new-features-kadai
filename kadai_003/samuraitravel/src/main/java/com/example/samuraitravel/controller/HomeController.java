@@ -1,5 +1,6 @@
 package com.example.samuraitravel.controller;
 
+
 import java.util.List;
 
 import org.springframework.stereotype.Controller;
